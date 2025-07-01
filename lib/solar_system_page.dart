@@ -543,7 +543,8 @@ class SolarSystemPainter extends CustomPainter {
 
       // Draw planet label with position and geocentric position
       final label = TextSpan(
-        text: '$planet\n(${posAU.dx.toStringAsFixed(2)}, ${posAU.dy.toStringAsFixed(2)}) AU$geoLabel',
+        text:
+            '$planet\n(${posAU.dx.toStringAsFixed(2)}, ${posAU.dy.toStringAsFixed(2)}) AU$geoLabel',
         style: TextStyle(
           color: Colors.white,
           fontWeight: FontWeight.w600,
