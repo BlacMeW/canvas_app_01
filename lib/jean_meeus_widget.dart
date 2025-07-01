@@ -14,6 +14,47 @@ class JeanMeeusWidget extends StatefulWidget {
 }
 
 class _JeanMeeusWidgetState extends State<JeanMeeusWidget> {
+  // Returns Jupiter-centric (x, y) in AU for each planet
+  Map<String, Offset> getJupiterCentricPositions() {
+    return getPlanetCentricPositions('Jupiter');
+  }
+
+  // Returns Jupiter-centric longitude (degrees) for each planet
+  Map<String, double> getJupiterCentricLongitudes() {
+    return getPlanetCentricLongitudes('Jupiter');
+  }
+
+  // Returns Saturn-centric (x, y) in AU for each planet
+  Map<String, Offset> getSaturnCentricPositions() {
+    return getPlanetCentricPositions('Saturn');
+  }
+
+  // Returns Saturn-centric longitude (degrees) for each planet
+  Map<String, double> getSaturnCentricLongitudes() {
+    return getPlanetCentricLongitudes('Saturn');
+  }
+
+  // Returns Mars-centric (x, y) in AU for each planet
+  Map<String, Offset> getMarsCentricPositions() {
+    return getPlanetCentricPositions('Mars');
+  }
+
+  // Returns Mars-centric longitude (degrees) for each planet
+  Map<String, double> getMarsCentricLongitudes() {
+    return getPlanetCentricLongitudes('Mars');
+  }
+
+  // Removed geocentricLongitudes field; call getGeocentricLongitudes() directly where needed.
+  // Returns Venus-centric (x, y) in AU for each planet
+  Map<String, Offset> getVenusCentricPositions() {
+    return getPlanetCentricPositions('Venus');
+  }
+
+  // Returns Venus-centric longitude (degrees) for each planet
+  Map<String, double> getVenusCentricLongitudes() {
+    return getPlanetCentricLongitudes('Venus');
+  }
+
   // Returns planet-centric (x, y) in AU for each planet, with given center
   Map<String, Offset> getPlanetCentricPositions(String center) {
     final helio = getHeliocentricPositions();
@@ -45,6 +86,7 @@ class _JeanMeeusWidgetState extends State<JeanMeeusWidget> {
     });
     return longitudes;
   }
+
   // Returns geocentric longitude (degrees) for each planet (Earth at 0,0)
   Map<String, double> getGeocentricLongitudes() {
     final geo = getGeocentricPositions();
@@ -288,6 +330,18 @@ class _JeanMeeusWidgetState extends State<JeanMeeusWidget> {
     // Mercury-centric data
     final mercuryCentricPositions = getPlanetCentricPositions('Mercury');
     final mercuryCentricLongitudes = getPlanetCentricLongitudes('Mercury');
+    // Venus-centric data
+    final venusCentricPositions = getVenusCentricPositions();
+    final venusCentricLongitudes = getVenusCentricLongitudes();
+    // Mars-centric data
+    final marsCentricPositions = getMarsCentricPositions();
+    final marsCentricLongitudes = getMarsCentricLongitudes();
+    // Jupiter-centric data
+    final jupiterCentricPositions = getJupiterCentricPositions();
+    final jupiterCentricLongitudes = getJupiterCentricLongitudes();
+    // Saturn-centric data
+    final saturnCentricPositions = getSaturnCentricPositions();
+    final saturnCentricLongitudes = getSaturnCentricLongitudes();
     final stepOptions = ['Hour', 'Day', 'Month'];
     final earthPos = getEarthHeliocentricPosition();
     final planetPositions = getHeliocentricPositions();
@@ -302,7 +356,6 @@ class _JeanMeeusWidgetState extends State<JeanMeeusWidget> {
       'Neptune',
     ];
     final geocentricPositions = getGeocentricPositions();
-    final geocentricLongitudes = getGeocentricLongitudes();
     return Card(
       margin: const EdgeInsets.all(16),
       child: Padding(
@@ -408,6 +461,7 @@ class _JeanMeeusWidgetState extends State<JeanMeeusWidget> {
                     },
                   ),
                 ];
+                final geocentricLongitudes = getGeocentricLongitudes();
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
@@ -429,7 +483,7 @@ class _JeanMeeusWidgetState extends State<JeanMeeusWidget> {
                       '${selectedDate.toIso8601String().substring(0, 10)}'
                       ' ${selectedDate.hour.toString().padLeft(2, '0')}:${selectedDate.minute.toString().padLeft(2, '0')}',
                     ),
-                    Text('Julian Day: 	${julianDay.toStringAsFixed(5)}'),
+                    Text('Julian Day: \t${julianDay.toStringAsFixed(5)}'),
                     Text("Sun's Mean Longitude: ${sunMeanLongitude.toStringAsFixed(5)}°"),
                     if (earthPos != null)
                       Text(
@@ -443,57 +497,275 @@ class _JeanMeeusWidgetState extends State<JeanMeeusWidget> {
                     ),
                     // Table for planet data
                     SizedBox(
-                      height: 240,
-                      child: Scrollbar(
-                        thumbVisibility: true,
-                        controller: ScrollController(),
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.vertical,
-                          child: Scrollbar(
-                            thumbVisibility: true,
-                            controller: ScrollController(),
-                            notificationPredicate: (notif) => notif.metrics.axis == Axis.horizontal,
-                            child: SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: DataTable(
-                                headingRowColor: WidgetStateProperty.resolveWith<Color?>(
-                                  (states) =>
-                                      Theme.of(context).colorScheme.secondary.withOpacity(0.08),
+                      height: 260,
+                      child: Card(
+                        elevation: 2,
+                        margin: EdgeInsets.zero,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        child: Scrollbar(
+                          thumbVisibility: true,
+                          controller: ScrollController(),
+                          notificationPredicate: (notif) => notif.metrics.axis == Axis.horizontal,
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Scrollbar(
+                              thumbVisibility: true,
+                              controller: ScrollController(),
+                              child: SingleChildScrollView(
+                                scrollDirection: Axis.vertical,
+                                child: DataTable(
+                                  headingRowColor: WidgetStateProperty.resolveWith<Color?>(
+                                    (states) =>
+                                        Theme.of(context).colorScheme.secondary.withOpacity(0.13),
+                                  ),
+                                  dataRowColor: WidgetStateProperty.resolveWith<Color?>(
+                                    (states) => states.contains(WidgetState.selected)
+                                        ? Theme.of(context).colorScheme.primary.withOpacity(0.10)
+                                        : Colors.transparent,
+                                  ),
+                                  columns: const [
+                                    DataColumn(
+                                      label: Text(
+                                        'Planet',
+                                        style: TextStyle(fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                    DataColumn(label: Text('Helio x (AU)')),
+                                    DataColumn(label: Text('Helio y (AU)')),
+                                    DataColumn(label: Text('Geo x (AU)')),
+                                    DataColumn(label: Text('Geo y (AU)')),
+                                    DataColumn(label: Text('Geo Long (°)')),
+                                    DataColumn(label: Text('Merc x (AU)')),
+                                    DataColumn(label: Text('Merc y (AU)')),
+                                    DataColumn(label: Text('Merc Long (°)')),
+                                    DataColumn(label: Text('Venus x (AU)')),
+                                    DataColumn(label: Text('Venus y (AU)')),
+                                    DataColumn(label: Text('Venus Long (°)')),
+                                    DataColumn(label: Text('Mars x (AU)')),
+                                    DataColumn(label: Text('Mars y (AU)')),
+                                    DataColumn(label: Text('Mars Long (°)')),
+                                    DataColumn(label: Text('Jupiter x (AU)')),
+                                    DataColumn(label: Text('Jupiter y (AU)')),
+                                    DataColumn(label: Text('Jupiter Long (°)')),
+                                    DataColumn(label: Text('Saturn x (AU)')),
+                                    DataColumn(label: Text('Saturn y (AU)')),
+                                    DataColumn(label: Text('Saturn Long (°)')),
+                                    DataColumn(label: Text('Mean Longitude (°)')),
+                                  ],
+                                  rows: planetNames.map((planet) {
+                                    final pos = planetPositions[planet];
+                                    final geo = geocentricPositions[planet];
+                                    final geoLon = geocentricLongitudes[planet];
+                                    final merc = mercuryCentricPositions[planet];
+                                    final mercLon = mercuryCentricLongitudes[planet];
+                                    final venus = venusCentricPositions[planet];
+                                    final venusLon = venusCentricLongitudes[planet];
+                                    final mars = marsCentricPositions[planet];
+                                    final marsLon = marsCentricLongitudes[planet];
+                                    final jup = jupiterCentricPositions[planet];
+                                    final jupLon = jupiterCentricLongitudes[planet];
+                                    final sat = saturnCentricPositions[planet];
+                                    final satLon = saturnCentricLongitudes[planet];
+                                    final lon = planetLongitudes[planet];
+                                    Color? rowColor;
+                                    TextStyle? planetStyle;
+                                    switch (planet) {
+                                      case 'Mercury':
+                                        rowColor = Colors.grey.shade900.withOpacity(0.04);
+                                        planetStyle = TextStyle(
+                                          color: Colors.grey.shade400,
+                                          fontWeight: FontWeight.bold,
+                                        );
+                                        break;
+                                      case 'Venus':
+                                        rowColor = Colors.yellow.shade100.withOpacity(0.10);
+                                        planetStyle = TextStyle(
+                                          color: Colors.orange.shade700,
+                                          fontWeight: FontWeight.bold,
+                                        );
+                                        break;
+                                      case 'Earth':
+                                        rowColor = Colors.blue.shade100.withOpacity(0.10);
+                                        planetStyle = TextStyle(
+                                          color: Colors.blue.shade700,
+                                          fontWeight: FontWeight.bold,
+                                        );
+                                        break;
+                                      case 'Mars':
+                                        rowColor = Colors.red.shade100.withOpacity(0.10);
+                                        planetStyle = TextStyle(
+                                          color: Colors.red.shade700,
+                                          fontWeight: FontWeight.bold,
+                                        );
+                                        break;
+                                      case 'Jupiter':
+                                        rowColor = Colors.brown.shade100.withOpacity(0.10);
+                                        planetStyle = TextStyle(
+                                          color: Colors.brown.shade700,
+                                          fontWeight: FontWeight.bold,
+                                        );
+                                        break;
+                                      case 'Saturn':
+                                        rowColor = Colors.amber.shade100.withOpacity(0.10);
+                                        planetStyle = TextStyle(
+                                          color: Colors.amber.shade800,
+                                          fontWeight: FontWeight.bold,
+                                        );
+                                        break;
+                                      case 'Uranus':
+                                        rowColor = Colors.cyan.shade100.withOpacity(0.10);
+                                        planetStyle = TextStyle(
+                                          color: Colors.cyan.shade700,
+                                          fontWeight: FontWeight.bold,
+                                        );
+                                        break;
+                                      case 'Neptune':
+                                        rowColor = Colors.indigo.shade100.withOpacity(0.10);
+                                        planetStyle = TextStyle(
+                                          color: Colors.indigo.shade700,
+                                          fontWeight: FontWeight.bold,
+                                        );
+                                        break;
+                                      default:
+                                        rowColor = null;
+                                        planetStyle = null;
+                                    }
+                                    return DataRow(
+                                      color: WidgetStateProperty.resolveWith<Color?>(
+                                        (states) => rowColor,
+                                      ),
+                                      cells: [
+                                        DataCell(Text(planet, style: planetStyle)),
+                                        DataCell(
+                                          Text(
+                                            pos != null ? pos.dx.toStringAsFixed(4) : '-',
+                                            style: planetStyle,
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            pos != null ? pos.dy.toStringAsFixed(4) : '-',
+                                            style: planetStyle,
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            geo != null ? geo.dx.toStringAsFixed(4) : '-',
+                                            style: planetStyle,
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            geo != null ? geo.dy.toStringAsFixed(4) : '-',
+                                            style: planetStyle,
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            geoLon != null ? geoLon.toStringAsFixed(2) : '-',
+                                            style: planetStyle,
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            merc != null ? merc.dx.toStringAsFixed(4) : '-',
+                                            style: planetStyle,
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            merc != null ? merc.dy.toStringAsFixed(4) : '-',
+                                            style: planetStyle,
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            mercLon != null ? mercLon.toStringAsFixed(2) : '-',
+                                            style: planetStyle,
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            venus != null ? venus.dx.toStringAsFixed(4) : '-',
+                                            style: planetStyle,
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            venus != null ? venus.dy.toStringAsFixed(4) : '-',
+                                            style: planetStyle,
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            venusLon != null ? venusLon.toStringAsFixed(2) : '-',
+                                            style: planetStyle,
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            mars != null ? mars.dx.toStringAsFixed(4) : '-',
+                                            style: planetStyle,
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            mars != null ? mars.dy.toStringAsFixed(4) : '-',
+                                            style: planetStyle,
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            marsLon != null ? marsLon.toStringAsFixed(2) : '-',
+                                            style: planetStyle,
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            jup != null ? jup.dx.toStringAsFixed(4) : '-',
+                                            style: planetStyle,
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            jup != null ? jup.dy.toStringAsFixed(4) : '-',
+                                            style: planetStyle,
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            jupLon != null ? jupLon.toStringAsFixed(2) : '-',
+                                            style: planetStyle,
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            sat != null ? sat.dx.toStringAsFixed(4) : '-',
+                                            style: planetStyle,
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            sat != null ? sat.dy.toStringAsFixed(4) : '-',
+                                            style: planetStyle,
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            satLon != null ? satLon.toStringAsFixed(2) : '-',
+                                            style: planetStyle,
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            lon != null ? lon.toStringAsFixed(2) : '-',
+                                            style: planetStyle,
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  }).toList(),
                                 ),
-                                columns: const [
-                                  DataColumn(label: Text('Planet')),
-                                  DataColumn(label: Text('Helio x (AU)')),
-                                  DataColumn(label: Text('Helio y (AU)')),
-                                  DataColumn(label: Text('Geo x (AU)')),
-                                  DataColumn(label: Text('Geo y (AU)')),
-                                  DataColumn(label: Text('Geo Long (°)')),
-                                  DataColumn(label: Text('Merc x (AU)')),
-                                  DataColumn(label: Text('Merc y (AU)')),
-                                  DataColumn(label: Text('Merc Long (°)')),
-                                  DataColumn(label: Text('Mean Longitude (°)')),
-                                ],
-                                rows: planetNames.map((planet) {
-                                  final pos = planetPositions[planet];
-                                  final geo = geocentricPositions[planet];
-                                  final geoLon = geocentricLongitudes[planet];
-                                  final merc = mercuryCentricPositions[planet];
-                                  final mercLon = mercuryCentricLongitudes[planet];
-                                  final lon = planetLongitudes[planet];
-                                  return DataRow(
-                                    cells: [
-                                      DataCell(Text(planet)),
-                                      DataCell(Text(pos != null ? pos.dx.toStringAsFixed(4) : '-')),
-                                      DataCell(Text(pos != null ? pos.dy.toStringAsFixed(4) : '-')),
-                                      DataCell(Text(geo != null ? geo.dx.toStringAsFixed(4) : '-')),
-                                      DataCell(Text(geo != null ? geo.dy.toStringAsFixed(4) : '-')),
-                                      DataCell(Text(geoLon != null ? geoLon.toStringAsFixed(2) : '-')),
-                                      DataCell(Text(merc != null ? merc.dx.toStringAsFixed(4) : '-')),
-                                      DataCell(Text(merc != null ? merc.dy.toStringAsFixed(4) : '-')),
-                                      DataCell(Text(mercLon != null ? mercLon.toStringAsFixed(2) : '-')),
-                                      DataCell(Text(lon != null ? lon.toStringAsFixed(2) : '-')),
-                                    ],
-                                  );
-                                }).toList(),
                               ),
                             ),
                           ),

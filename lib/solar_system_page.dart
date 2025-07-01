@@ -14,21 +14,53 @@ class SolarSystemPage extends StatelessWidget {
         GlobalKey<_SolarSystemCanvasPanelState>();
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(38),
+        preferredSize: const Size.fromHeight(44),
         child: AppBar(
-          title: const Text(
-            'Solar System (Jean Meeus)',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          title: Row(
+            children: [
+              const Icon(Icons.public, size: 22),
+              const SizedBox(width: 8),
+              const Text(
+                'Solar System (Jean Meeus)',
+                style: TextStyle(fontSize: 19, fontWeight: FontWeight.w700, letterSpacing: 0.2),
+              ),
+              const Spacer(),
+              Tooltip(
+                message: 'About',
+                child: IconButton(
+                  icon: const Icon(Icons.info_outline, size: 20),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('About'),
+                        content: const Text(
+                          'This interactive visualization shows the solar system using Jean Meeus\' algorithms.\n\n'
+                          'You can explore planetary positions, toggle centric overlays, and view planetary data.\n\n'
+                          'Drag to pan, scroll to zoom, or use the controls above the canvas.',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            child: const Text('Close'),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
-          centerTitle: true,
-          elevation: 0.5,
+          centerTitle: false,
+          elevation: 1.0,
           backgroundColor: Theme.of(context).colorScheme.surface.withOpacity(0.98),
           foregroundColor: Theme.of(context).colorScheme.onSurface,
-          toolbarHeight: 38,
+          toolbarHeight: 44,
           shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(bottom: Radius.circular(10)),
+            borderRadius: BorderRadius.vertical(bottom: Radius.circular(12)),
           ),
-          titleSpacing: 0,
+          titleSpacing: 8,
         ),
       ),
       body: Container(
@@ -42,11 +74,38 @@ class SolarSystemPage extends StatelessWidget {
             end: Alignment.bottomRight,
           ),
         ),
-        child: ResizablePanels(
-          leftPanel: JeanMeeusWidgetPanel(
-            onDateChanged: (date) => canvasPanelKey.currentState?.setDate(date),
-          ),
-          rightPanel: SolarSystemCanvasPanel(key: canvasPanelKey),
+        child: Column(
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface.withOpacity(0.92),
+                border: const Border(bottom: BorderSide(color: Colors.black12, width: 0.5)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.touch_app, size: 18, color: Colors.blueGrey),
+                  const SizedBox(width: 6),
+                  const Text('Pan: Drag  ', style: TextStyle(fontSize: 13)),
+                  const Icon(Icons.zoom_in, size: 18, color: Colors.blueGrey),
+                  const SizedBox(width: 2),
+                  const Text('Zoom: Scroll or buttons  ', style: TextStyle(fontSize: 13)),
+                  const Icon(Icons.check_box, size: 18, color: Colors.blueGrey),
+                  const SizedBox(width: 2),
+                  const Text('Overlays: Toggle checkboxes', style: TextStyle(fontSize: 13)),
+                ],
+              ),
+            ),
+            Expanded(
+              child: ResizablePanels(
+                leftPanel: JeanMeeusWidgetPanel(
+                  onDateChanged: (date) => canvasPanelKey.currentState?.setDate(date),
+                ),
+                rightPanel: SolarSystemCanvasPanel(key: canvasPanelKey),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -152,12 +211,51 @@ class SolarSystemCanvasPanel extends StatefulWidget {
 
 class _SolarSystemCanvasPanelState extends State<SolarSystemCanvasPanel> {
   bool _showGeocentric = false;
+  bool _showMercuryCentric = false;
+  bool _showVenusCentric = false;
+  bool _showMarsCentric = false;
+  bool _showJupiterCentric = false;
+  bool _showSaturnCentric = false;
+  void setShowMarsCentric(bool value) {
+    setState(() {
+      _showMarsCentric = value;
+    });
+    _canvasKey.currentState?.setShowMarsCentric(value);
+  }
+
+  void setShowJupiterCentric(bool value) {
+    setState(() {
+      _showJupiterCentric = value;
+    });
+    _canvasKey.currentState?.setShowJupiterCentric(value);
+  }
+
+  void setShowSaturnCentric(bool value) {
+    setState(() {
+      _showSaturnCentric = value;
+    });
+    _canvasKey.currentState?.setShowSaturnCentric(value);
+  }
 
   void setShowGeocentric(bool value) {
     setState(() {
       _showGeocentric = value;
     });
     _canvasKey.currentState?.setShowGeocentric(value);
+  }
+
+  void setShowVenusCentric(bool value) {
+    setState(() {
+      _showVenusCentric = value;
+    });
+    _canvasKey.currentState?.setShowVenusCentric(value);
+  }
+
+  void setShowMercuryCentric(bool value) {
+    setState(() {
+      _showMercuryCentric = value;
+    });
+    _canvasKey.currentState?.setShowMercuryCentric(value);
   }
 
   double _zoom = 20.0;
@@ -178,33 +276,100 @@ class _SolarSystemCanvasPanelState extends State<SolarSystemCanvasPanel> {
 
   @override
   Widget build(BuildContext context) {
+    final List<_CentricOptionData> centricOptions = [
+      _CentricOptionData(
+        value: _showGeocentric,
+        onChanged: setShowGeocentric,
+        label: 'Geocentric',
+        color: Colors.greenAccent,
+        icon: Icons.public,
+      ),
+      _CentricOptionData(
+        value: _showMercuryCentric,
+        onChanged: setShowMercuryCentric,
+        label: 'Mercury',
+        color: Colors.orangeAccent,
+        icon: Icons.brightness_low,
+      ),
+      _CentricOptionData(
+        value: _showVenusCentric,
+        onChanged: setShowVenusCentric,
+        label: 'Venus',
+        color: Colors.pinkAccent,
+        icon: Icons.brightness_2,
+      ),
+      _CentricOptionData(
+        value: _showMarsCentric,
+        onChanged: setShowMarsCentric,
+        label: 'Mars',
+        color: Colors.redAccent,
+        icon: Icons.brightness_3,
+      ),
+      _CentricOptionData(
+        value: _showJupiterCentric,
+        onChanged: setShowJupiterCentric,
+        label: 'Jupiter',
+        color: Colors.brown,
+        icon: Icons.brightness_5,
+      ),
+      _CentricOptionData(
+        value: _showSaturnCentric,
+        onChanged: setShowSaturnCentric,
+        label: 'Saturn',
+        color: Colors.amber,
+        icon: Icons.brightness_6,
+      ),
+    ];
+
     return Column(
       children: [
         // Options row
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 4.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.zoom_out),
-                tooltip: 'Zoom Out',
-                onPressed: () => setZoom(_zoom / 1.2),
-              ),
-              Text('Zoom: ${_zoom.toStringAsFixed(2)}x'),
-              IconButton(
-                icon: const Icon(Icons.zoom_in),
-                tooltip: 'Zoom In',
-                onPressed: () => setZoom(_zoom * 1.2),
-              ),
-              const SizedBox(width: 24),
-              Row(
-                children: [
-                  Checkbox(value: _showGeocentric, onChanged: (v) => setShowGeocentric(v ?? false)),
-                  const Text('Show Geocentric Circle & Angles'),
-                ],
-              ),
-            ],
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.zoom_out),
+                  tooltip: 'Zoom Out',
+                  onPressed: () => setZoom(_zoom / 1.2),
+                ),
+                Text('Zoom: ${_zoom.toStringAsFixed(2)}x'),
+                IconButton(
+                  icon: const Icon(Icons.zoom_in),
+                  tooltip: 'Zoom In',
+                  onPressed: () => setZoom(_zoom * 1.2),
+                ),
+                const SizedBox(width: 24),
+                ...centricOptions.map((opt) => Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  child: FilterChip(
+                    label: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(opt.icon, size: 18, color: opt.value ? opt.color : Colors.grey),
+                        const SizedBox(width: 4),
+                        Text(
+                          opt.label,
+                          style: TextStyle(
+                            color: opt.value ? opt.color : Colors.grey,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                    selected: opt.value,
+                    selectedColor: opt.color.withOpacity(0.18),
+                    backgroundColor: Colors.grey.withOpacity(0.08),
+                    checkmarkColor: opt.color,
+                    onSelected: (v) => opt.onChanged(!opt.value),
+                    showCheckmark: true,
+                  ),
+                )),
+              ],
+            ),
           ),
         ),
         Expanded(
@@ -217,6 +382,11 @@ class _SolarSystemCanvasPanelState extends State<SolarSystemCanvasPanel> {
                   key: _canvasKey,
                   zoom: _zoom,
                   showGeocentric: _showGeocentric,
+                  showMercuryCentric: _showMercuryCentric,
+                  showVenusCentric: _showVenusCentric,
+                  showMarsCentric: _showMarsCentric,
+                  showJupiterCentric: _showJupiterCentric,
+                  showSaturnCentric: _showSaturnCentric,
                 ),
               );
             },
@@ -227,10 +397,40 @@ class _SolarSystemCanvasPanelState extends State<SolarSystemCanvasPanel> {
   }
 }
 
+// Helper class for centric overlay options
+class _CentricOptionData {
+  final bool value;
+  final void Function(bool) onChanged;
+  final String label;
+  final Color color;
+  final IconData icon;
+  const _CentricOptionData({
+    required this.value,
+    required this.onChanged,
+    required this.label,
+    required this.color,
+    required this.icon,
+  });
+}
+
 class SolarSystemCanvas extends StatefulWidget {
   final double zoom;
   final bool showGeocentric;
-  const SolarSystemCanvas({super.key, this.zoom = 20.0, this.showGeocentric = false});
+  final bool showMercuryCentric;
+  final bool showVenusCentric;
+  final bool showMarsCentric;
+  final bool showJupiterCentric;
+  final bool showSaturnCentric;
+  const SolarSystemCanvas({
+    super.key,
+    this.zoom = 20.0,
+    this.showGeocentric = false,
+    this.showMercuryCentric = false,
+    this.showVenusCentric = false,
+    this.showMarsCentric = false,
+    this.showJupiterCentric = false,
+    this.showSaturnCentric = false,
+  });
 
   @override
   State<SolarSystemCanvas> createState() => _SolarSystemCanvasState();
@@ -239,6 +439,40 @@ class SolarSystemCanvas extends StatefulWidget {
 class _SolarSystemCanvasState extends State<SolarSystemCanvas> {
   double _zoom = 20.0;
   bool _showGeocentric = false;
+  bool _showMercuryCentric = false;
+  bool _showVenusCentric = false;
+  void setShowVenusCentric(bool value) {
+    setState(() {
+      _showVenusCentric = value;
+    });
+  }
+
+  void setShowMercuryCentric(bool value) {
+    setState(() {
+      _showMercuryCentric = value;
+    });
+  }
+
+  bool _showMarsCentric = false;
+  bool _showJupiterCentric = false;
+  bool _showSaturnCentric = false;
+  void setShowMarsCentric(bool value) {
+    setState(() {
+      _showMarsCentric = value;
+    });
+  }
+
+  void setShowJupiterCentric(bool value) {
+    setState(() {
+      _showJupiterCentric = value;
+    });
+  }
+
+  void setShowSaturnCentric(bool value) {
+    setState(() {
+      _showSaturnCentric = value;
+    });
+  }
 
   Offset _panOffset = Offset.zero;
   Offset? _lastDragPos;
@@ -300,6 +534,11 @@ class _SolarSystemCanvasState extends State<SolarSystemCanvas> {
     _calculateMeeus(date);
     _zoom = widget.zoom;
     _showGeocentric = widget.showGeocentric;
+    _showMercuryCentric = widget.showMercuryCentric;
+    _showVenusCentric = widget.showVenusCentric;
+    _showMarsCentric = widget.showMarsCentric;
+    _showJupiterCentric = widget.showJupiterCentric;
+    _showSaturnCentric = widget.showSaturnCentric;
   }
 
   void _calculateMeeus(DateTime selectedDate) {
@@ -386,6 +625,11 @@ class _SolarSystemCanvasState extends State<SolarSystemCanvas> {
                       theme: Theme.of(context),
                       zoom: _zoom,
                       showGeocentric: _showGeocentric,
+                      showMercuryCentric: _showMercuryCentric,
+                      showVenusCentric: _showVenusCentric,
+                      showMarsCentric: _showMarsCentric,
+                      showJupiterCentric: _showJupiterCentric,
+                      showSaturnCentric: _showSaturnCentric,
                       panOffset: _panOffset,
                     ),
                   ),
@@ -416,24 +660,7 @@ class _SolarSystemCanvasState extends State<SolarSystemCanvas> {
 }
 
 class SolarSystemPainter extends CustomPainter {
-  final Map<String, double> planetLongitudes;
-  final double sunLongitude;
-  final Map<String, Offset> planetPositions; // heliocentric positions in AU
-  final ThemeData? theme;
-  final double zoom;
-  final bool showGeocentric;
-  final Offset panOffset;
-  SolarSystemPainter({
-    required this.planetLongitudes,
-    required this.sunLongitude,
-    required this.planetPositions,
-    this.theme,
-    this.zoom = 1.0,
-    this.showGeocentric = false,
-    this.panOffset = Offset.zero,
-  });
-
-  final List<String> planetOrder = [
+  static const List<String> planetOrder = [
     'Mercury',
     'Venus',
     'Earth',
@@ -443,16 +670,47 @@ class SolarSystemPainter extends CustomPainter {
     'Uranus',
     'Neptune',
   ];
-  List<Color> get planetColors => [
-    theme?.colorScheme.secondary ?? const Color(0xFFB0B0B0), // Mercury
-    const Color(0xFFFFC300), // Venus
-    theme?.colorScheme.primary ?? const Color(0xFF2196F3), // Earth
-    const Color(0xFFE53935), // Mars
-    const Color(0xFFB8860B), // Jupiter
-    const Color(0xFFBDB76B), // Saturn
-    const Color(0xFF00B8D4), // Uranus
-    const Color(0xFF3F51B5), // Neptune
-  ];
+
+  final Map<String, double> planetLongitudes;
+  final double sunLongitude;
+  final Map<String, Offset> planetPositions; // heliocentric positions in AU
+  final ThemeData? theme;
+  final double zoom;
+  final bool showGeocentric;
+  final bool showMercuryCentric;
+  final bool showVenusCentric;
+  final bool showMarsCentric;
+  final bool showJupiterCentric;
+  final bool showSaturnCentric;
+  final Offset panOffset;
+
+  List<Color> get planetColors {
+    return [
+      theme?.colorScheme.secondary ?? const Color(0xFFB0B0B0), // Mercury
+      const Color(0xFFFFC300), // Venus
+      theme?.colorScheme.primary ?? const Color(0xFF2196F3), // Earth
+      const Color(0xFFE53935), // Mars
+      const Color(0xFFB8860B), // Jupiter
+      const Color(0xFFBDB76B), // Saturn
+      const Color(0xFF00B8D4), // Uranus
+      const Color(0xFF3F51B5), // Neptune
+    ];
+  }
+
+  SolarSystemPainter({
+    required this.planetLongitudes,
+    required this.sunLongitude,
+    required this.planetPositions,
+    this.theme,
+    this.zoom = 1.0,
+    this.showGeocentric = false,
+    this.showMercuryCentric = false,
+    this.showVenusCentric = false,
+    this.showMarsCentric = false,
+    this.showJupiterCentric = false,
+    this.showSaturnCentric = false,
+    this.panOffset = Offset.zero,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -461,13 +719,161 @@ class SolarSystemPainter extends CustomPainter {
     double maxAU = planetPositions.values.map((p) => p.distance).fold(1.0, math.max);
     double scale = size.shortestSide * 0.45 / maxAU * zoom;
 
+    // Mars-centric overlay
+    if (showMarsCentric && planetPositions.containsKey('Mars')) {
+      final Offset marsAU = planetPositions['Mars']!;
+      final Offset marsPos = center + Offset(marsAU.dx * scale, marsAU.dy * scale);
+      final Offset? neptuneAU = planetPositions['Neptune'];
+      if (neptuneAU != null) {
+        double marsRadius = (neptuneAU - marsAU).distance * scale;
+        final Paint marsCirclePaint = Paint()
+          ..color = Colors.redAccent.withOpacity(0.22)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.5;
+        canvas.drawCircle(marsPos, marsRadius, marsCirclePaint);
+      }
+      final Paint marsLinePaint = Paint()
+        ..color = Colors.redAccent.withOpacity(0.5)
+        ..strokeWidth = 2;
+      for (final planet in SolarSystemPainter.planetOrder) {
+        if (planet == 'Mars') continue;
+        final Offset? pAU = planetPositions[planet];
+        if (pAU == null) continue;
+        final Offset pPos = center + Offset(pAU.dx * scale, pAU.dy * scale);
+        canvas.drawLine(marsPos, pPos, marsLinePaint);
+        double dx = pAU.dx - marsAU.dx;
+        double dy = pAU.dy - marsAU.dy;
+        double angle = math.atan2(dy, dx) * 180 / math.pi;
+        if (angle < 0) angle += 360;
+        final angleLabel = TextSpan(
+          text: '${angle.toStringAsFixed(1)}°',
+          style: TextStyle(
+            color: Colors.redAccent,
+            fontWeight: FontWeight.bold,
+            fontSize: scale * 0.035,
+            shadows: [Shadow(blurRadius: 4, color: Colors.black, offset: Offset(1, 1))],
+          ),
+        );
+        final anglePainter = TextPainter(
+          text: angleLabel,
+          textAlign: TextAlign.center,
+          textDirection: TextDirection.ltr,
+        );
+        anglePainter.layout();
+        final Offset labelPos =
+            marsPos +
+            (pPos - marsPos) * 0.6 -
+            Offset(anglePainter.width / 2, anglePainter.height / 2);
+        anglePainter.paint(canvas, labelPos);
+      }
+    }
+
+    // Jupiter-centric overlay
+    if (showJupiterCentric && planetPositions.containsKey('Jupiter')) {
+      final Offset jupiterAU = planetPositions['Jupiter']!;
+      final Offset jupiterPos = center + Offset(jupiterAU.dx * scale, jupiterAU.dy * scale);
+      final Offset? neptuneAU = planetPositions['Neptune'];
+      if (neptuneAU != null) {
+        double jupiterRadius = (neptuneAU - jupiterAU).distance * scale;
+        final Paint jupiterCirclePaint = Paint()
+          ..color = Colors.brown.withOpacity(0.22)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.5;
+        canvas.drawCircle(jupiterPos, jupiterRadius, jupiterCirclePaint);
+      }
+      final Paint jupiterLinePaint = Paint()
+        ..color = Colors.brown.withOpacity(0.5)
+        ..strokeWidth = 2;
+      for (final planet in SolarSystemPainter.planetOrder) {
+        if (planet == 'Jupiter') continue;
+        final Offset? pAU = planetPositions[planet];
+        if (pAU == null) continue;
+        final Offset pPos = center + Offset(pAU.dx * scale, pAU.dy * scale);
+        canvas.drawLine(jupiterPos, pPos, jupiterLinePaint);
+        double dx = pAU.dx - jupiterAU.dx;
+        double dy = pAU.dy - jupiterAU.dy;
+        double angle = math.atan2(dy, dx) * 180 / math.pi;
+        if (angle < 0) angle += 360;
+        final angleLabel = TextSpan(
+          text: '${angle.toStringAsFixed(1)}°',
+          style: TextStyle(
+            color: Colors.brown,
+            fontWeight: FontWeight.bold,
+            fontSize: scale * 0.035,
+            shadows: [Shadow(blurRadius: 4, color: Colors.black, offset: Offset(1, 1))],
+          ),
+        );
+        final anglePainter = TextPainter(
+          text: angleLabel,
+          textAlign: TextAlign.center,
+          textDirection: TextDirection.ltr,
+        );
+        anglePainter.layout();
+        final Offset labelPos =
+            jupiterPos +
+            (pPos - jupiterPos) * 0.6 -
+            Offset(anglePainter.width / 2, anglePainter.height / 2);
+        anglePainter.paint(canvas, labelPos);
+      }
+    }
+
+    // Saturn-centric overlay
+    if (showSaturnCentric && planetPositions.containsKey('Saturn')) {
+      final Offset saturnAU = planetPositions['Saturn']!;
+      final Offset saturnPos = center + Offset(saturnAU.dx * scale, saturnAU.dy * scale);
+      final Offset? neptuneAU = planetPositions['Neptune'];
+      if (neptuneAU != null) {
+        double saturnRadius = (neptuneAU - saturnAU).distance * scale;
+        final Paint saturnCirclePaint = Paint()
+          ..color = Colors.amber.withOpacity(0.22)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.5;
+        canvas.drawCircle(saturnPos, saturnRadius, saturnCirclePaint);
+      }
+      final Paint saturnLinePaint = Paint()
+        ..color = Colors.amber.withOpacity(0.5)
+        ..strokeWidth = 2;
+      for (final planet in SolarSystemPainter.planetOrder) {
+        if (planet == 'Saturn') continue;
+        final Offset? pAU = planetPositions[planet];
+        if (pAU == null) continue;
+        final Offset pPos = center + Offset(pAU.dx * scale, pAU.dy * scale);
+        canvas.drawLine(saturnPos, pPos, saturnLinePaint);
+        double dx = pAU.dx - saturnAU.dx;
+        double dy = pAU.dy - saturnAU.dy;
+        double angle = math.atan2(dy, dx) * 180 / math.pi;
+        if (angle < 0) angle += 360;
+        final angleLabel = TextSpan(
+          text: '${angle.toStringAsFixed(1)}°',
+          style: TextStyle(
+            color: Colors.amber,
+            fontWeight: FontWeight.bold,
+            fontSize: scale * 0.035,
+            shadows: [Shadow(blurRadius: 4, color: Colors.black, offset: Offset(1, 1))],
+          ),
+        );
+        final anglePainter = TextPainter(
+          text: angleLabel,
+          textAlign: TextAlign.center,
+          textDirection: TextDirection.ltr,
+        );
+        anglePainter.layout();
+        final Offset labelPos =
+            saturnPos +
+            (pPos - saturnPos) * 0.6 -
+            Offset(anglePainter.width / 2, anglePainter.height / 2);
+        anglePainter.paint(canvas, labelPos);
+      }
+    }
+
     // Draw orbits (circles for each planet's mean distance)
     final Paint orbitPaint = Paint()
       ..color = Colors.white.withOpacity(0.08)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
-    for (int i = 0; i < planetOrder.length; i++) {
-      double rAU = planetPositions[planetOrder[i]]?.distance ?? (i + 1).toDouble();
+    for (int i = 0; i < SolarSystemPainter.planetOrder.length; i++) {
+      double rAU =
+          planetPositions[SolarSystemPainter.planetOrder[i]]?.distance ?? (i + 1).toDouble();
       double r = rAU * scale;
       canvas.drawCircle(center, r, orbitPaint);
     }
@@ -490,7 +896,7 @@ class SolarSystemPainter extends CustomPainter {
       final Paint geoLinePaint = Paint()
         ..color = Colors.greenAccent.withOpacity(0.5)
         ..strokeWidth = 2;
-      for (final planet in planetOrder) {
+      for (final planet in SolarSystemPainter.planetOrder) {
         if (planet == 'Earth') continue;
         final Offset? pAU = planetPositions[planet];
         if (pAU == null) continue;
@@ -525,6 +931,112 @@ class SolarSystemPainter extends CustomPainter {
       }
     }
 
+    // Draw Mercury-centric circle and angles if enabled
+    if (showMercuryCentric && planetPositions.containsKey('Mercury')) {
+      final Offset mercuryAU = planetPositions['Mercury']!;
+      final Offset mercuryPos = center + Offset(mercuryAU.dx * scale, mercuryAU.dy * scale);
+      // Mercury-centric circle: radius = distance to Neptune
+      final Offset? neptuneAU = planetPositions['Neptune'];
+      if (neptuneAU != null) {
+        double mercRadius = (neptuneAU - mercuryAU).distance * scale;
+        final Paint mercCirclePaint = Paint()
+          ..color = Colors.orangeAccent.withOpacity(0.22)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.5;
+        canvas.drawCircle(mercuryPos, mercRadius, mercCirclePaint);
+      }
+      // Draw Mercury-centric lines and angles
+      final Paint mercLinePaint = Paint()
+        ..color = Colors.orangeAccent.withOpacity(0.5)
+        ..strokeWidth = 2;
+      for (final planet in SolarSystemPainter.planetOrder) {
+        if (planet == 'Mercury') continue;
+        final Offset? pAU = planetPositions[planet];
+        if (pAU == null) continue;
+        final Offset pPos = center + Offset(pAU.dx * scale, pAU.dy * scale);
+        canvas.drawLine(mercuryPos, pPos, mercLinePaint);
+        // Draw angle label
+        double dx = pAU.dx - mercuryAU.dx;
+        double dy = pAU.dy - mercuryAU.dy;
+        double angle = math.atan2(dy, dx) * 180 / math.pi;
+        if (angle < 0) angle += 360;
+        final angleLabel = TextSpan(
+          text: '${angle.toStringAsFixed(1)}°',
+          style: TextStyle(
+            color: Colors.orangeAccent,
+            fontWeight: FontWeight.bold,
+            fontSize: scale * 0.035,
+            shadows: [Shadow(blurRadius: 4, color: Colors.black, offset: Offset(1, 1))],
+          ),
+        );
+        final anglePainter = TextPainter(
+          text: angleLabel,
+          textAlign: TextAlign.center,
+          textDirection: TextDirection.ltr,
+        );
+        anglePainter.layout();
+        // Place angle label at 60% of the way from Mercury to planet
+        final Offset labelPos =
+            mercuryPos +
+            (pPos - mercuryPos) * 0.6 -
+            Offset(anglePainter.width / 2, anglePainter.height / 2);
+        anglePainter.paint(canvas, labelPos);
+      }
+    }
+
+    // Draw Venus-centric circle and angles if enabled
+    if (showVenusCentric && planetPositions.containsKey('Venus')) {
+      final Offset venusAU = planetPositions['Venus']!;
+      final Offset venusPos = center + Offset(venusAU.dx * scale, venusAU.dy * scale);
+      // Venus-centric circle: radius = distance to Neptune
+      final Offset? neptuneAU = planetPositions['Neptune'];
+      if (neptuneAU != null) {
+        double venusRadius = (neptuneAU - venusAU).distance * scale;
+        final Paint venusCirclePaint = Paint()
+          ..color = Colors.pinkAccent.withOpacity(0.22)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.5;
+        canvas.drawCircle(venusPos, venusRadius, venusCirclePaint);
+      }
+      // Draw Venus-centric lines and angles
+      final Paint venusLinePaint = Paint()
+        ..color = Colors.pinkAccent.withOpacity(0.5)
+        ..strokeWidth = 2;
+      for (final planet in SolarSystemPainter.planetOrder) {
+        if (planet == 'Venus') continue;
+        final Offset? pAU = planetPositions[planet];
+        if (pAU == null) continue;
+        final Offset pPos = center + Offset(pAU.dx * scale, pAU.dy * scale);
+        canvas.drawLine(venusPos, pPos, venusLinePaint);
+        // Draw angle label
+        double dx = pAU.dx - venusAU.dx;
+        double dy = pAU.dy - venusAU.dy;
+        double angle = math.atan2(dy, dx) * 180 / math.pi;
+        if (angle < 0) angle += 360;
+        final angleLabel = TextSpan(
+          text: '${angle.toStringAsFixed(1)}°',
+          style: TextStyle(
+            color: Colors.pinkAccent,
+            fontWeight: FontWeight.bold,
+            fontSize: scale * 0.035,
+            shadows: [Shadow(blurRadius: 4, color: Colors.black, offset: Offset(1, 1))],
+          ),
+        );
+        final anglePainter = TextPainter(
+          text: angleLabel,
+          textAlign: TextAlign.center,
+          textDirection: TextDirection.ltr,
+        );
+        anglePainter.layout();
+        // Place angle label at 60% of the way from Venus to planet
+        final Offset labelPos =
+            venusPos +
+            (pPos - venusPos) * 0.6 -
+            Offset(anglePainter.width / 2, anglePainter.height / 2);
+        anglePainter.paint(canvas, labelPos);
+      }
+    }
+
     // Draw Sun with glow
     final Paint sunPaint = Paint()
       ..color = Colors.yellow.shade600
@@ -551,8 +1063,8 @@ class SolarSystemPainter extends CustomPainter {
     // Draw planets at heliocentric positions
     // Compute Earth's heliocentric position for geocentric calculation
     final Offset? earthAU = planetPositions['Earth'];
-    for (int i = 0; i < planetOrder.length; i++) {
-      String planet = planetOrder[i];
+    for (int i = 0; i < SolarSystemPainter.planetOrder.length; i++) {
+      String planet = SolarSystemPainter.planetOrder[i];
       final Offset? posAU = planetPositions[planet];
       if (posAU == null) continue;
       final Offset pos = center + Offset(posAU.dx * scale, posAU.dy * scale);
@@ -595,6 +1107,14 @@ class SolarSystemPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant SolarSystemPainter oldDelegate) {
     return oldDelegate.planetLongitudes != planetLongitudes ||
-        oldDelegate.sunLongitude != sunLongitude;
+        oldDelegate.sunLongitude != sunLongitude ||
+        oldDelegate.showGeocentric != showGeocentric ||
+        oldDelegate.showMercuryCentric != showMercuryCentric ||
+        oldDelegate.showVenusCentric != showVenusCentric ||
+        oldDelegate.showMarsCentric != showMarsCentric ||
+        oldDelegate.showJupiterCentric != showJupiterCentric ||
+        oldDelegate.showSaturnCentric != showSaturnCentric ||
+        oldDelegate.zoom != zoom ||
+        oldDelegate.panOffset != panOffset;
   }
 }
