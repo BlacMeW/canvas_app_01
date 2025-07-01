@@ -8,6 +8,19 @@ import 'jean_meeus_widget.dart';
 class SolarSystemPage extends StatelessWidget {
   const SolarSystemPage({super.key});
 
+  // Map planet names to asset filenames
+  static const Map<String, String> planetSymbolAssets = {
+    'Mercury': 'assets/planet_symbols/mercury.png',
+    'Venus': 'assets/planet_symbols/venus.png',
+    'Earth': 'assets/planet_symbols/earth.png',
+    'Mars': 'assets/planet_symbols/mars.png',
+    'Jupiter': 'assets/planet_symbols/jupiter.png',
+    'Saturn': 'assets/planet_symbols/saturn.png',
+    'Uranus': 'assets/planet_symbols/uranus.png',
+    'Neptune': 'assets/planet_symbols/neptune.png',
+    'Sun': 'assets/planet_symbols/sun.png',
+  };
+
   @override
   Widget build(BuildContext context) {
     final GlobalKey<_SolarSystemCanvasPanelState> canvasPanelKey =
@@ -18,7 +31,13 @@ class SolarSystemPage extends StatelessWidget {
         child: AppBar(
           title: Row(
             children: [
-              const Icon(Icons.public, size: 22),
+              // Use Sun symbol if available, else fallback to icon
+              Image.asset(
+                planetSymbolAssets['Sun']!,
+                width: 22,
+                height: 22,
+                errorBuilder: (context, error, stackTrace) => const Icon(Icons.public, size: 22),
+              ),
               const SizedBox(width: 8),
               const Text(
                 'Solar System (Jean Meeus)',
@@ -283,6 +302,7 @@ class _SolarSystemCanvasPanelState extends State<SolarSystemCanvasPanel> {
         label: 'Geocentric',
         color: Colors.greenAccent,
         icon: Icons.public,
+        asset: null, // No PNG for geocentric
       ),
       _CentricOptionData(
         value: _showMercuryCentric,
@@ -290,6 +310,7 @@ class _SolarSystemCanvasPanelState extends State<SolarSystemCanvasPanel> {
         label: 'Mercury',
         color: Colors.orangeAccent,
         icon: Icons.brightness_low,
+        asset: SolarSystemPage.planetSymbolAssets['Mercury'],
       ),
       _CentricOptionData(
         value: _showVenusCentric,
@@ -297,6 +318,7 @@ class _SolarSystemCanvasPanelState extends State<SolarSystemCanvasPanel> {
         label: 'Venus',
         color: Colors.pinkAccent,
         icon: Icons.brightness_2,
+        asset: SolarSystemPage.planetSymbolAssets['Venus'],
       ),
       _CentricOptionData(
         value: _showMarsCentric,
@@ -304,6 +326,7 @@ class _SolarSystemCanvasPanelState extends State<SolarSystemCanvasPanel> {
         label: 'Mars',
         color: Colors.redAccent,
         icon: Icons.brightness_3,
+        asset: SolarSystemPage.planetSymbolAssets['Mars'],
       ),
       _CentricOptionData(
         value: _showJupiterCentric,
@@ -311,6 +334,7 @@ class _SolarSystemCanvasPanelState extends State<SolarSystemCanvasPanel> {
         label: 'Jupiter',
         color: Colors.brown,
         icon: Icons.brightness_5,
+        asset: SolarSystemPage.planetSymbolAssets['Jupiter'],
       ),
       _CentricOptionData(
         value: _showSaturnCentric,
@@ -318,6 +342,7 @@ class _SolarSystemCanvasPanelState extends State<SolarSystemCanvasPanel> {
         label: 'Saturn',
         color: Colors.amber,
         icon: Icons.brightness_6,
+        asset: SolarSystemPage.planetSymbolAssets['Saturn'],
       ),
     ];
 
@@ -350,7 +375,22 @@ class _SolarSystemCanvasPanelState extends State<SolarSystemCanvasPanel> {
                       label: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(opt.icon, size: 18, color: opt.value ? opt.color : Colors.grey),
+                          if (opt.asset != null)
+                            Image.asset(
+                              opt.asset!,
+                              width: 18,
+                              height: 18,
+                              color: opt.value ? opt.color : Colors.grey,
+                              errorBuilder: (context, error, stackTrace) => opt.icon != null
+                                  ? Icon(
+                                      opt.icon,
+                                      size: 18,
+                                      color: opt.value ? opt.color : Colors.grey,
+                                    )
+                                  : const SizedBox.shrink(),
+                            )
+                          else if (opt.icon != null)
+                            Icon(opt.icon, size: 18, color: opt.value ? opt.color : Colors.grey),
                           const SizedBox(width: 4),
                           Text(
                             opt.label,
@@ -406,14 +446,16 @@ class _CentricOptionData {
   final void Function(bool) onChanged;
   final String label;
   final Color color;
-  final IconData icon;
+  final IconData? icon;
+  final String? asset;
 
   const _CentricOptionData({
     required this.value,
     required this.onChanged,
     required this.label,
     required this.color,
-    required this.icon,
+    this.icon,
+    this.asset,
   });
 
   @override
@@ -425,6 +467,7 @@ class _CentricOptionData {
     String? label,
     Color? color,
     IconData? icon,
+    String? asset,
   }) {
     return _CentricOptionData(
       value: value ?? this.value,
@@ -432,6 +475,7 @@ class _CentricOptionData {
       label: label ?? this.label,
       color: color ?? this.color,
       icon: icon ?? this.icon,
+      asset: asset ?? this.asset,
     );
   }
 }
