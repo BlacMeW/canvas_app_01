@@ -13,12 +13,41 @@ class SolarSystemPage extends StatelessWidget {
     final GlobalKey<_SolarSystemCanvasPanelState> canvasPanelKey =
         GlobalKey<_SolarSystemCanvasPanelState>();
     return Scaffold(
-      appBar: AppBar(title: const Text('Solar System (Jean Meeus)')),
-      body: ResizablePanels(
-        leftPanel: JeanMeeusWidgetPanel(
-          onDateChanged: (date) => canvasPanelKey.currentState?.setDate(date),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(38),
+        child: AppBar(
+          title: const Text(
+            'Solar System (Jean Meeus)',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
+          centerTitle: true,
+          elevation: 0.5,
+          backgroundColor: Theme.of(context).colorScheme.surface.withOpacity(0.98),
+          foregroundColor: Theme.of(context).colorScheme.onSurface,
+          toolbarHeight: 38,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(bottom: Radius.circular(10)),
+          ),
+          titleSpacing: 0,
         ),
-        rightPanel: SolarSystemCanvasPanel(key: canvasPanelKey),
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Theme.of(context).colorScheme.surface,
+              Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.7),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: ResizablePanels(
+          leftPanel: JeanMeeusWidgetPanel(
+            onDateChanged: (date) => canvasPanelKey.currentState?.setDate(date),
+          ),
+          rightPanel: SolarSystemCanvasPanel(key: canvasPanelKey),
+        ),
       ),
     );
   }
