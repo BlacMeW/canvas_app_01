@@ -264,7 +264,7 @@ class _JeanMeeusWidgetState extends State<JeanMeeusWidget> {
                     }
                   },
                   style: ElevatedButton.styleFrom(minimumSize: Size(90, 36)),
-                  child: const Text('Set Timer'),
+                  child: const Text('Set Time'),
                 ),
               ],
             ),

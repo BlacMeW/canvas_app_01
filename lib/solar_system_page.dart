@@ -48,10 +48,7 @@ class _ResizablePanelsState extends State<ResizablePanels> {
         final rightWidth = width - leftWidth - 8;
         return Row(
           children: [
-            SizedBox(
-              width: leftWidth,
-              child: widget.leftPanel,
-            ),
+            SizedBox(width: leftWidth, child: widget.leftPanel),
             GestureDetector(
               behavior: HitTestBehavior.translucent,
               onHorizontalDragStart: (_) => setState(() => _dragging = true),
@@ -83,10 +80,7 @@ class _ResizablePanelsState extends State<ResizablePanels> {
                 ),
               ),
             ),
-            SizedBox(
-              width: rightWidth,
-              child: widget.rightPanel,
-            ),
+            SizedBox(width: rightWidth, child: widget.rightPanel),
           ],
         );
       },
@@ -214,8 +208,10 @@ class SolarSystemCanvas extends StatefulWidget {
 
 class _SolarSystemCanvasState extends State<SolarSystemCanvas> {
   double _zoom = 20.0;
-
   bool _showGeocentric = false;
+
+  Offset _panOffset = Offset.zero;
+  Offset? _lastDragPos;
 
   void setShowGeocentric(bool value) {
     setState(() {
@@ -226,6 +222,12 @@ class _SolarSystemCanvasState extends State<SolarSystemCanvas> {
   void setZoom(double zoom) {
     setState(() {
       _zoom = zoom.clamp(0.1, 100.0);
+    });
+  }
+
+  void _resetPan() {
+    setState(() {
+      _panOffset = Offset.zero;
     });
   }
 
@@ -313,19 +315,56 @@ class _SolarSystemCanvasState extends State<SolarSystemCanvas> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final size = Size(constraints.maxWidth, constraints.maxHeight);
-        return Container(
-          color: Colors.black,
-          child: CustomPaint(
-            size: size,
-            painter: SolarSystemPainter(
-              planetLongitudes: planetLongitudes,
-              sunLongitude: sunLongitude,
-              planetPositions: planetPositions,
-              theme: Theme.of(context),
-              zoom: _zoom,
-              showGeocentric: _showGeocentric,
+        return Stack(
+          children: [
+            GestureDetector(
+              onPanStart: (details) {
+                _lastDragPos = details.localPosition;
+              },
+              onPanUpdate: (details) {
+                setState(() {
+                  if (_lastDragPos != null) {
+                    _panOffset += details.localPosition - _lastDragPos!;
+                  }
+                  _lastDragPos = details.localPosition;
+                });
+              },
+              onPanEnd: (_) {
+                _lastDragPos = null;
+              },
+              child: Container(
+                color: Colors.black,
+                child: CustomPaint(
+                  size: size,
+                  painter: SolarSystemPainter(
+                    planetLongitudes: planetLongitudes,
+                    sunLongitude: sunLongitude,
+                    planetPositions: planetPositions,
+                    theme: Theme.of(context),
+                    zoom: _zoom,
+                    showGeocentric: _showGeocentric,
+                    panOffset: _panOffset,
+                  ),
+                ),
+              ),
             ),
-          ),
+            Positioned(
+              top: 12,
+              right: 12,
+              child: ElevatedButton.icon(
+                onPressed: _resetPan,
+                icon: const Icon(Icons.center_focus_strong),
+                label: const Text('Recenter'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black.withOpacity(0.7),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  textStyle: const TextStyle(fontSize: 13),
+                  elevation: 0,
+                ),
+              ),
+            ),
+          ],
         );
       },
     );
@@ -339,6 +378,7 @@ class SolarSystemPainter extends CustomPainter {
   final ThemeData? theme;
   final double zoom;
   final bool showGeocentric;
+  final Offset panOffset;
   SolarSystemPainter({
     required this.planetLongitudes,
     required this.sunLongitude,
@@ -346,6 +386,7 @@ class SolarSystemPainter extends CustomPainter {
     this.theme,
     this.zoom = 1.0,
     this.showGeocentric = false,
+    this.panOffset = Offset.zero,
   });
 
   final List<String> planetOrder = [
@@ -371,7 +412,7 @@ class SolarSystemPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
+    final center = Offset(size.width / 2, size.height / 2) + panOffset;
     // Find max AU for scaling
     double maxAU = planetPositions.values.map((p) => p.distance).fold(1.0, math.max);
     double scale = size.shortestSide * 0.45 / maxAU * zoom;
