@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import 'jean_meeus_widget.dart';
@@ -317,33 +318,47 @@ class _SolarSystemCanvasState extends State<SolarSystemCanvas> {
         final size = Size(constraints.maxWidth, constraints.maxHeight);
         return Stack(
           children: [
-            GestureDetector(
-              onPanStart: (details) {
-                _lastDragPos = details.localPosition;
+            Listener(
+              onPointerSignal: (event) {
+                if (event is PointerScrollEvent) {
+                  final scroll = event.scrollDelta.dy;
+                  setState(() {
+                    if (scroll < 0) {
+                      _zoom = (_zoom * 1.1).clamp(0.1, 100.0);
+                    } else if (scroll > 0) {
+                      _zoom = (_zoom / 1.1).clamp(0.1, 100.0);
+                    }
+                  });
+                }
               },
-              onPanUpdate: (details) {
-                setState(() {
-                  if (_lastDragPos != null) {
-                    _panOffset += details.localPosition - _lastDragPos!;
-                  }
+              child: GestureDetector(
+                onPanStart: (details) {
                   _lastDragPos = details.localPosition;
-                });
-              },
-              onPanEnd: (_) {
-                _lastDragPos = null;
-              },
-              child: Container(
-                color: Colors.black,
-                child: CustomPaint(
-                  size: size,
-                  painter: SolarSystemPainter(
-                    planetLongitudes: planetLongitudes,
-                    sunLongitude: sunLongitude,
-                    planetPositions: planetPositions,
-                    theme: Theme.of(context),
-                    zoom: _zoom,
-                    showGeocentric: _showGeocentric,
-                    panOffset: _panOffset,
+                },
+                onPanUpdate: (details) {
+                  setState(() {
+                    if (_lastDragPos != null) {
+                      _panOffset += details.localPosition - _lastDragPos!;
+                    }
+                    _lastDragPos = details.localPosition;
+                  });
+                },
+                onPanEnd: (_) {
+                  _lastDragPos = null;
+                },
+                child: Container(
+                  color: Colors.black,
+                  child: CustomPaint(
+                    size: size,
+                    painter: SolarSystemPainter(
+                      planetLongitudes: planetLongitudes,
+                      sunLongitude: sunLongitude,
+                      planetPositions: planetPositions,
+                      theme: Theme.of(context),
+                      zoom: _zoom,
+                      showGeocentric: _showGeocentric,
+                      panOffset: _panOffset,
+                    ),
                   ),
                 ),
               ),
