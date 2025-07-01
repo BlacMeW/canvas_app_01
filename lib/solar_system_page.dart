@@ -520,6 +520,8 @@ class SolarSystemPainter extends CustomPainter {
     sunPainter.paint(canvas, center + Offset(-sunPainter.width / 2, scale * 0.09));
 
     // Draw planets at heliocentric positions
+    // Compute Earth's heliocentric position for geocentric calculation
+    final Offset? earthAU = planetPositions['Earth'];
     for (int i = 0; i < planetOrder.length; i++) {
       String planet = planetOrder[i];
       final Offset? posAU = planetPositions[planet];
@@ -531,9 +533,17 @@ class SolarSystemPainter extends CustomPainter {
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
       canvas.drawCircle(pos, scale * 0.045, planetPaint);
 
-      // Draw planet label with position
+      // Calculate geocentric position (relative to Earth)
+      String geoLabel = '';
+      if (earthAU != null && planet != 'Earth') {
+        final geoX = (posAU.dx - earthAU.dx).toStringAsFixed(2);
+        final geoY = (posAU.dy - earthAU.dy).toStringAsFixed(2);
+        geoLabel = '\nGeo: ($geoX, $geoY) AU';
+      }
+
+      // Draw planet label with position and geocentric position
       final label = TextSpan(
-        text: '$planet\n(${posAU.dx.toStringAsFixed(2)}, ${posAU.dy.toStringAsFixed(2)}) AU',
+        text: '$planet\n(${posAU.dx.toStringAsFixed(2)}, ${posAU.dy.toStringAsFixed(2)}) AU$geoLabel',
         style: TextStyle(
           color: Colors.white,
           fontWeight: FontWeight.w600,
@@ -545,7 +555,7 @@ class SolarSystemPainter extends CustomPainter {
         text: label,
         textAlign: TextAlign.center,
         textDirection: TextDirection.ltr,
-        maxLines: 2,
+        maxLines: 3,
       );
       labelPainter.layout();
       labelPainter.paint(canvas, pos + Offset(-labelPainter.width / 2, scale * 0.06));

@@ -19,29 +19,47 @@ class _JeanMeeusWidgetState extends State<JeanMeeusWidget> {
   String _timerStep = 'Day'; // 'Hour', 'Day', 'Month'
   int _timerDirection = 1; // 1 for forward, -1 for backward
 
+  void _startTimer() {
+    if (_timerRunning) return;
+    _timer = Timer.periodic(const Duration(milliseconds: 500), (timer) {
+      switch (_timerStep) {
+        case 'Hour':
+          _stepHour(_timerDirection);
+          break;
+        case 'Day':
+          _stepDate(Duration(days: 1 * _timerDirection));
+          break;
+        case 'Month':
+          _stepMonth(1 * _timerDirection);
+          break;
+      }
+    });
+    setState(() {
+      _timerRunning = true;
+    });
+  }
+
+  void _pauseTimer() {
+    if (!_timerRunning) return;
+    _timer?.cancel();
+    setState(() {
+      _timerRunning = false;
+    });
+  }
+
+  void _stopTimer() {
+    _timer?.cancel();
+    setState(() {
+      _timerRunning = false;
+      // Optionally reset to initial date or keep current
+    });
+  }
+
   void _toggleTimer() {
     if (_timerRunning) {
-      _timer?.cancel();
-      setState(() {
-        _timerRunning = false;
-      });
+      _pauseTimer();
     } else {
-      _timer = Timer.periodic(const Duration(milliseconds: 500), (timer) {
-        switch (_timerStep) {
-          case 'Hour':
-            _stepHour(_timerDirection);
-            break;
-          case 'Day':
-            _stepDate(Duration(days: 1 * _timerDirection));
-            break;
-          case 'Month':
-            _stepMonth(1 * _timerDirection);
-            break;
-        }
-      });
-      setState(() {
-        _timerRunning = true;
-      });
+      _startTimer();
     }
   }
 
@@ -399,10 +417,22 @@ class _JeanMeeusWidgetState extends State<JeanMeeusWidget> {
                       ),
                     ),
                     IconButton(
-                      tooltip: _timerRunning ? 'Pause Timer' : 'Play Timer',
-                      icon: Icon(_timerRunning ? Icons.pause : Icons.play_arrow),
-                      color: Colors.amber,
-                      onPressed: _toggleTimer,
+                      tooltip: 'Start Timer',
+                      icon: const Icon(Icons.play_arrow),
+                      color: !_timerRunning ? Colors.green : Colors.grey,
+                      onPressed: !_timerRunning ? _startTimer : null,
+                    ),
+                    IconButton(
+                      tooltip: 'Pause Timer',
+                      icon: const Icon(Icons.pause),
+                      color: _timerRunning ? Colors.amber : Colors.grey,
+                      onPressed: _timerRunning ? _pauseTimer : null,
+                    ),
+                    IconButton(
+                      tooltip: 'Stop Timer',
+                      icon: const Icon(Icons.stop),
+                      color: _timerRunning ? Colors.red : Colors.grey,
+                      onPressed: _timerRunning ? _stopTimer : null,
                     ),
                     IconButton(
                       tooltip: 'Reverse Timer Direction',
