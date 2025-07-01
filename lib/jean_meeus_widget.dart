@@ -3,6 +3,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+enum TimerStep { hour, day, month }
+
 typedef JeanMeeusDateChanged = void Function(DateTime date);
 
 class JeanMeeusWidget extends StatefulWidget {
@@ -14,45 +16,53 @@ class JeanMeeusWidget extends StatefulWidget {
 }
 
 class _JeanMeeusWidgetState extends State<JeanMeeusWidget> {
-  // Returns Jupiter-centric (x, y) in AU for each planet
-  Map<String, Offset> getJupiterCentricPositions() {
-    return getPlanetCentricPositions('Jupiter');
+  /// Returns the color and text style for a planet row in the data table.
+  MapEntry<Color?, TextStyle?> getPlanetRowStyle(String planet) {
+    // Style map for planet rows
+    final styleMap = <String, MapEntry<Color?, TextStyle?>>{
+      'Mercury': MapEntry(
+        Colors.grey.shade900.withOpacity(0.04),
+        TextStyle(color: Colors.grey.shade400, fontWeight: FontWeight.bold),
+      ),
+      'Venus': MapEntry(
+        Colors.yellow.shade100.withOpacity(0.10),
+        TextStyle(color: Colors.orange.shade700, fontWeight: FontWeight.bold),
+      ),
+      'Earth': MapEntry(
+        Colors.blue.shade100.withOpacity(0.10),
+        TextStyle(color: Colors.blue.shade700, fontWeight: FontWeight.bold),
+      ),
+      'Mars': MapEntry(
+        Colors.red.shade100.withOpacity(0.10),
+        TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.bold),
+      ),
+      'Jupiter': MapEntry(
+        Colors.brown.shade100.withOpacity(0.10),
+        TextStyle(color: Colors.brown.shade700, fontWeight: FontWeight.bold),
+      ),
+      'Saturn': MapEntry(
+        Colors.amber.shade100.withOpacity(0.10),
+        TextStyle(color: Colors.amber.shade800, fontWeight: FontWeight.bold),
+      ),
+      'Uranus': MapEntry(
+        Colors.cyan.shade100.withOpacity(0.10),
+        TextStyle(color: Colors.cyan.shade700, fontWeight: FontWeight.bold),
+      ),
+      'Neptune': MapEntry(
+        Colors.indigo.shade100.withOpacity(0.10),
+        TextStyle(color: Colors.indigo.shade700, fontWeight: FontWeight.bold),
+      ),
+    };
+    return styleMap[planet] ?? const MapEntry(null, null);
   }
 
-  // Returns Jupiter-centric longitude (degrees) for each planet
-  Map<String, double> getJupiterCentricLongitudes() {
-    return getPlanetCentricLongitudes('Jupiter');
+  // Generic method to get planet-centric positions or longitudes
+  Map<String, Offset> getCentricPositions(String center) {
+    return getPlanetCentricPositions(center);
   }
 
-  // Returns Saturn-centric (x, y) in AU for each planet
-  Map<String, Offset> getSaturnCentricPositions() {
-    return getPlanetCentricPositions('Saturn');
-  }
-
-  // Returns Saturn-centric longitude (degrees) for each planet
-  Map<String, double> getSaturnCentricLongitudes() {
-    return getPlanetCentricLongitudes('Saturn');
-  }
-
-  // Returns Mars-centric (x, y) in AU for each planet
-  Map<String, Offset> getMarsCentricPositions() {
-    return getPlanetCentricPositions('Mars');
-  }
-
-  // Returns Mars-centric longitude (degrees) for each planet
-  Map<String, double> getMarsCentricLongitudes() {
-    return getPlanetCentricLongitudes('Mars');
-  }
-
-  // Removed geocentricLongitudes field; call getGeocentricLongitudes() directly where needed.
-  // Returns Venus-centric (x, y) in AU for each planet
-  Map<String, Offset> getVenusCentricPositions() {
-    return getPlanetCentricPositions('Venus');
-  }
-
-  // Returns Venus-centric longitude (degrees) for each planet
-  Map<String, double> getVenusCentricLongitudes() {
-    return getPlanetCentricLongitudes('Venus');
+  Map<String, double> getCentricLongitudes(String center) {
+    return getPlanetCentricLongitudes(center);
   }
 
   // Returns planet-centric (x, y) in AU for each planet, with given center
@@ -121,20 +131,20 @@ class _JeanMeeusWidgetState extends State<JeanMeeusWidget> {
 
   Timer? _timer;
   bool _timerRunning = false;
-  String _timerStep = 'Day'; // 'Hour', 'Day', 'Month'
+  TimerStep _timerStep = TimerStep.day;
   int _timerDirection = 1; // 1 for forward, -1 for backward
 
   void _startTimer() {
     if (_timerRunning) return;
     _timer = Timer.periodic(const Duration(milliseconds: 500), (timer) {
       switch (_timerStep) {
-        case 'Hour':
+        case TimerStep.hour:
           _stepHour(_timerDirection);
           break;
-        case 'Day':
+        case TimerStep.day:
           _stepDate(Duration(days: 1 * _timerDirection));
           break;
-        case 'Month':
+        case TimerStep.month:
           _stepMonth(1 * _timerDirection);
           break;
       }
@@ -325,24 +335,31 @@ class _JeanMeeusWidgetState extends State<JeanMeeusWidget> {
 
   // _pickDate removed: replaced by Set Timer (date+time picker)
 
+  String _timerStepLabel(TimerStep step) {
+    switch (step) {
+      case TimerStep.hour:
+        return 'Hour';
+      case TimerStep.day:
+        return 'Day';
+      case TimerStep.month:
+        return 'Month';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Mercury-centric data
-    final mercuryCentricPositions = getPlanetCentricPositions('Mercury');
-    final mercuryCentricLongitudes = getPlanetCentricLongitudes('Mercury');
-    // Venus-centric data
-    final venusCentricPositions = getVenusCentricPositions();
-    final venusCentricLongitudes = getVenusCentricLongitudes();
-    // Mars-centric data
-    final marsCentricPositions = getMarsCentricPositions();
-    final marsCentricLongitudes = getMarsCentricLongitudes();
-    // Jupiter-centric data
-    final jupiterCentricPositions = getJupiterCentricPositions();
-    final jupiterCentricLongitudes = getJupiterCentricLongitudes();
-    // Saturn-centric data
-    final saturnCentricPositions = getSaturnCentricPositions();
-    final saturnCentricLongitudes = getSaturnCentricLongitudes();
-    final stepOptions = ['Hour', 'Day', 'Month'];
+    // Centric data for each planet
+    final mercuryCentricPositions = getCentricPositions('Mercury');
+    final mercuryCentricLongitudes = getCentricLongitudes('Mercury');
+    final venusCentricPositions = getCentricPositions('Venus');
+    final venusCentricLongitudes = getCentricLongitudes('Venus');
+    final marsCentricPositions = getCentricPositions('Mars');
+    final marsCentricLongitudes = getCentricLongitudes('Mars');
+    final jupiterCentricPositions = getCentricPositions('Jupiter');
+    final jupiterCentricLongitudes = getCentricLongitudes('Jupiter');
+    final saturnCentricPositions = getCentricPositions('Saturn');
+    final saturnCentricLongitudes = getCentricLongitudes('Saturn');
+    final stepOptions = TimerStep.values;
     final earthPos = getEarthHeliocentricPosition();
     final planetPositions = getHeliocentricPositions();
     final planetNames = [
@@ -424,10 +441,10 @@ class _JeanMeeusWidgetState extends State<JeanMeeusWidget> {
                       ),
                     ),
                     child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
+                      child: DropdownButton<TimerStep>(
                         value: _timerStep,
                         items: stepOptions
-                            .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                            .map((s) => DropdownMenuItem(value: s, child: Text(_timerStepLabel(s))))
                             .toList(),
                         onChanged: (val) {
                           if (val != null) setState(() => _timerStep = val);
@@ -567,69 +584,9 @@ class _JeanMeeusWidgetState extends State<JeanMeeusWidget> {
                                     final sat = saturnCentricPositions[planet];
                                     final satLon = saturnCentricLongitudes[planet];
                                     final lon = planetLongitudes[planet];
-                                    Color? rowColor;
-                                    TextStyle? planetStyle;
-                                    switch (planet) {
-                                      case 'Mercury':
-                                        rowColor = Colors.grey.shade900.withOpacity(0.04);
-                                        planetStyle = TextStyle(
-                                          color: Colors.grey.shade400,
-                                          fontWeight: FontWeight.bold,
-                                        );
-                                        break;
-                                      case 'Venus':
-                                        rowColor = Colors.yellow.shade100.withOpacity(0.10);
-                                        planetStyle = TextStyle(
-                                          color: Colors.orange.shade700,
-                                          fontWeight: FontWeight.bold,
-                                        );
-                                        break;
-                                      case 'Earth':
-                                        rowColor = Colors.blue.shade100.withOpacity(0.10);
-                                        planetStyle = TextStyle(
-                                          color: Colors.blue.shade700,
-                                          fontWeight: FontWeight.bold,
-                                        );
-                                        break;
-                                      case 'Mars':
-                                        rowColor = Colors.red.shade100.withOpacity(0.10);
-                                        planetStyle = TextStyle(
-                                          color: Colors.red.shade700,
-                                          fontWeight: FontWeight.bold,
-                                        );
-                                        break;
-                                      case 'Jupiter':
-                                        rowColor = Colors.brown.shade100.withOpacity(0.10);
-                                        planetStyle = TextStyle(
-                                          color: Colors.brown.shade700,
-                                          fontWeight: FontWeight.bold,
-                                        );
-                                        break;
-                                      case 'Saturn':
-                                        rowColor = Colors.amber.shade100.withOpacity(0.10);
-                                        planetStyle = TextStyle(
-                                          color: Colors.amber.shade800,
-                                          fontWeight: FontWeight.bold,
-                                        );
-                                        break;
-                                      case 'Uranus':
-                                        rowColor = Colors.cyan.shade100.withOpacity(0.10);
-                                        planetStyle = TextStyle(
-                                          color: Colors.cyan.shade700,
-                                          fontWeight: FontWeight.bold,
-                                        );
-                                        break;
-                                      case 'Neptune':
-                                        rowColor = Colors.indigo.shade100.withOpacity(0.10);
-                                        planetStyle = TextStyle(
-                                          color: Colors.indigo.shade700,
-                                          fontWeight: FontWeight.bold,
-                                        );
-                                        break;
-                                      default:
-                                        rowColor = null;
-                                        planetStyle = null;
-                                    }
+                                    final styleEntry = getPlanetRowStyle(planet);
+                                    final rowColor = styleEntry.key;
+                                    final planetStyle = styleEntry.value;
                                     return DataRow(
                                       color: WidgetStateProperty.resolveWith<Color?>(
                                         (states) => rowColor,
@@ -828,18 +785,18 @@ class _JeanMeeusWidgetState extends State<JeanMeeusWidget> {
                                 ),
                               ),
                               child: DropdownButtonHideUnderline(
-                                child: DropdownButton<String>(
+                                child: DropdownButton<TimerStep>(
                                   value: _timerStep,
                                   items: stepOptions
                                       .map(
-                                        (s) => DropdownMenuItem(
+                                        (s) => DropdownMenuItem<TimerStep>(
                                           value: s,
                                           child: Row(
                                             children: [
                                               Icon(
-                                                s == 'Hour'
+                                                s == TimerStep.hour
                                                     ? Icons.schedule
-                                                    : s == 'Day'
+                                                    : s == TimerStep.day
                                                     ? Icons.calendar_today
                                                     : Icons.calendar_view_month,
                                                 size: 18,
@@ -847,7 +804,7 @@ class _JeanMeeusWidgetState extends State<JeanMeeusWidget> {
                                               ),
                                               const SizedBox(width: 6),
                                               Text(
-                                                s,
+                                                _timerStepLabel(s),
                                                 style: TextStyle(
                                                   fontWeight: _timerStep == s
                                                       ? FontWeight.bold
@@ -867,7 +824,7 @@ class _JeanMeeusWidgetState extends State<JeanMeeusWidget> {
                                   onChanged: (val) {
                                     if (val != null) setState(() => _timerStep = val);
                                   },
-                                  style: TextStyle(fontSize: 15),
+                                  style: TextStyle(fontSize: 14),
                                   dropdownColor: Theme.of(context).cardColor,
                                   borderRadius: BorderRadius.circular(8),
                                 ),

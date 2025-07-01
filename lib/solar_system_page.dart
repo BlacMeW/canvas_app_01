@@ -343,31 +343,33 @@ class _SolarSystemCanvasPanelState extends State<SolarSystemCanvasPanel> {
                   onPressed: () => setZoom(_zoom * 1.2),
                 ),
                 const SizedBox(width: 24),
-                ...centricOptions.map((opt) => Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 6),
-                  child: FilterChip(
-                    label: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(opt.icon, size: 18, color: opt.value ? opt.color : Colors.grey),
-                        const SizedBox(width: 4),
-                        Text(
-                          opt.label,
-                          style: TextStyle(
-                            color: opt.value ? opt.color : Colors.grey,
-                            fontWeight: FontWeight.w600,
+                ...centricOptions.map(
+                  (opt) => Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    child: FilterChip(
+                      label: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(opt.icon, size: 18, color: opt.value ? opt.color : Colors.grey),
+                          const SizedBox(width: 4),
+                          Text(
+                            opt.label,
+                            style: TextStyle(
+                              color: opt.value ? opt.color : Colors.grey,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
+                      selected: opt.value,
+                      selectedColor: opt.color.withOpacity(0.18),
+                      backgroundColor: Colors.grey.withOpacity(0.08),
+                      checkmarkColor: opt.color,
+                      onSelected: (v) => opt.onChanged(!opt.value),
+                      showCheckmark: true,
                     ),
-                    selected: opt.value,
-                    selectedColor: opt.color.withOpacity(0.18),
-                    backgroundColor: Colors.grey.withOpacity(0.08),
-                    checkmarkColor: opt.color,
-                    onSelected: (v) => opt.onChanged(!opt.value),
-                    showCheckmark: true,
                   ),
-                )),
+                ),
               ],
             ),
           ),
@@ -398,12 +400,14 @@ class _SolarSystemCanvasPanelState extends State<SolarSystemCanvasPanel> {
 }
 
 // Helper class for centric overlay options
+/// Data class for centric overlay toggle options in the UI.
 class _CentricOptionData {
   final bool value;
   final void Function(bool) onChanged;
   final String label;
   final Color color;
   final IconData icon;
+
   const _CentricOptionData({
     required this.value,
     required this.onChanged,
@@ -411,6 +415,25 @@ class _CentricOptionData {
     required this.color,
     required this.icon,
   });
+
+  @override
+  String toString() => '_CentricOptionData(label: $label, value: $value)';
+
+  _CentricOptionData copyWith({
+    bool? value,
+    void Function(bool)? onChanged,
+    String? label,
+    Color? color,
+    IconData? icon,
+  }) {
+    return _CentricOptionData(
+      value: value ?? this.value,
+      onChanged: onChanged ?? this.onChanged,
+      label: label ?? this.label,
+      color: color ?? this.color,
+      icon: icon ?? this.icon,
+    );
+  }
 }
 
 class SolarSystemCanvas extends StatefulWidget {
@@ -719,36 +742,41 @@ class SolarSystemPainter extends CustomPainter {
     double maxAU = planetPositions.values.map((p) => p.distance).fold(1.0, math.max);
     double scale = size.shortestSide * 0.45 / maxAU * zoom;
 
-    // Mars-centric overlay
-    if (showMarsCentric && planetPositions.containsKey('Mars')) {
-      final Offset marsAU = planetPositions['Mars']!;
-      final Offset marsPos = center + Offset(marsAU.dx * scale, marsAU.dy * scale);
+    // Helper to draw centric overlays (Mars, Jupiter, Saturn)
+    void drawCentricOverlay({
+      required String planetName,
+      required bool show,
+      required Color color,
+    }) {
+      if (!show || !planetPositions.containsKey(planetName)) return;
+      final Offset centricAU = planetPositions[planetName]!;
+      final Offset centricPos = center + Offset(centricAU.dx * scale, centricAU.dy * scale);
       final Offset? neptuneAU = planetPositions['Neptune'];
       if (neptuneAU != null) {
-        double marsRadius = (neptuneAU - marsAU).distance * scale;
-        final Paint marsCirclePaint = Paint()
-          ..color = Colors.redAccent.withOpacity(0.22)
+        double centricRadius = (neptuneAU - centricAU).distance * scale;
+        final Paint centricCirclePaint = Paint()
+          ..color = color.withOpacity(0.22)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2.5;
-        canvas.drawCircle(marsPos, marsRadius, marsCirclePaint);
+        canvas.drawCircle(centricPos, centricRadius, centricCirclePaint);
       }
-      final Paint marsLinePaint = Paint()
-        ..color = Colors.redAccent.withOpacity(0.5)
+      final Paint centricLinePaint = Paint()
+        ..color = color.withOpacity(0.5)
         ..strokeWidth = 2;
       for (final planet in SolarSystemPainter.planetOrder) {
-        if (planet == 'Mars') continue;
+        if (planet == planetName) continue;
         final Offset? pAU = planetPositions[planet];
         if (pAU == null) continue;
         final Offset pPos = center + Offset(pAU.dx * scale, pAU.dy * scale);
-        canvas.drawLine(marsPos, pPos, marsLinePaint);
-        double dx = pAU.dx - marsAU.dx;
-        double dy = pAU.dy - marsAU.dy;
+        canvas.drawLine(centricPos, pPos, centricLinePaint);
+        double dx = pAU.dx - centricAU.dx;
+        double dy = pAU.dy - centricAU.dy;
         double angle = math.atan2(dy, dx) * 180 / math.pi;
         if (angle < 0) angle += 360;
         final angleLabel = TextSpan(
           text: '${angle.toStringAsFixed(1)}°',
           style: TextStyle(
-            color: Colors.redAccent,
+            color: color,
             fontWeight: FontWeight.bold,
             fontSize: scale * 0.035,
             shadows: [Shadow(blurRadius: 4, color: Colors.black, offset: Offset(1, 1))],
@@ -761,110 +789,17 @@ class SolarSystemPainter extends CustomPainter {
         );
         anglePainter.layout();
         final Offset labelPos =
-            marsPos +
-            (pPos - marsPos) * 0.6 -
+            centricPos +
+            (pPos - centricPos) * 0.6 -
             Offset(anglePainter.width / 2, anglePainter.height / 2);
         anglePainter.paint(canvas, labelPos);
       }
     }
 
-    // Jupiter-centric overlay
-    if (showJupiterCentric && planetPositions.containsKey('Jupiter')) {
-      final Offset jupiterAU = planetPositions['Jupiter']!;
-      final Offset jupiterPos = center + Offset(jupiterAU.dx * scale, jupiterAU.dy * scale);
-      final Offset? neptuneAU = planetPositions['Neptune'];
-      if (neptuneAU != null) {
-        double jupiterRadius = (neptuneAU - jupiterAU).distance * scale;
-        final Paint jupiterCirclePaint = Paint()
-          ..color = Colors.brown.withOpacity(0.22)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2.5;
-        canvas.drawCircle(jupiterPos, jupiterRadius, jupiterCirclePaint);
-      }
-      final Paint jupiterLinePaint = Paint()
-        ..color = Colors.brown.withOpacity(0.5)
-        ..strokeWidth = 2;
-      for (final planet in SolarSystemPainter.planetOrder) {
-        if (planet == 'Jupiter') continue;
-        final Offset? pAU = planetPositions[planet];
-        if (pAU == null) continue;
-        final Offset pPos = center + Offset(pAU.dx * scale, pAU.dy * scale);
-        canvas.drawLine(jupiterPos, pPos, jupiterLinePaint);
-        double dx = pAU.dx - jupiterAU.dx;
-        double dy = pAU.dy - jupiterAU.dy;
-        double angle = math.atan2(dy, dx) * 180 / math.pi;
-        if (angle < 0) angle += 360;
-        final angleLabel = TextSpan(
-          text: '${angle.toStringAsFixed(1)}°',
-          style: TextStyle(
-            color: Colors.brown,
-            fontWeight: FontWeight.bold,
-            fontSize: scale * 0.035,
-            shadows: [Shadow(blurRadius: 4, color: Colors.black, offset: Offset(1, 1))],
-          ),
-        );
-        final anglePainter = TextPainter(
-          text: angleLabel,
-          textAlign: TextAlign.center,
-          textDirection: TextDirection.ltr,
-        );
-        anglePainter.layout();
-        final Offset labelPos =
-            jupiterPos +
-            (pPos - jupiterPos) * 0.6 -
-            Offset(anglePainter.width / 2, anglePainter.height / 2);
-        anglePainter.paint(canvas, labelPos);
-      }
-    }
-
-    // Saturn-centric overlay
-    if (showSaturnCentric && planetPositions.containsKey('Saturn')) {
-      final Offset saturnAU = planetPositions['Saturn']!;
-      final Offset saturnPos = center + Offset(saturnAU.dx * scale, saturnAU.dy * scale);
-      final Offset? neptuneAU = planetPositions['Neptune'];
-      if (neptuneAU != null) {
-        double saturnRadius = (neptuneAU - saturnAU).distance * scale;
-        final Paint saturnCirclePaint = Paint()
-          ..color = Colors.amber.withOpacity(0.22)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2.5;
-        canvas.drawCircle(saturnPos, saturnRadius, saturnCirclePaint);
-      }
-      final Paint saturnLinePaint = Paint()
-        ..color = Colors.amber.withOpacity(0.5)
-        ..strokeWidth = 2;
-      for (final planet in SolarSystemPainter.planetOrder) {
-        if (planet == 'Saturn') continue;
-        final Offset? pAU = planetPositions[planet];
-        if (pAU == null) continue;
-        final Offset pPos = center + Offset(pAU.dx * scale, pAU.dy * scale);
-        canvas.drawLine(saturnPos, pPos, saturnLinePaint);
-        double dx = pAU.dx - saturnAU.dx;
-        double dy = pAU.dy - saturnAU.dy;
-        double angle = math.atan2(dy, dx) * 180 / math.pi;
-        if (angle < 0) angle += 360;
-        final angleLabel = TextSpan(
-          text: '${angle.toStringAsFixed(1)}°',
-          style: TextStyle(
-            color: Colors.amber,
-            fontWeight: FontWeight.bold,
-            fontSize: scale * 0.035,
-            shadows: [Shadow(blurRadius: 4, color: Colors.black, offset: Offset(1, 1))],
-          ),
-        );
-        final anglePainter = TextPainter(
-          text: angleLabel,
-          textAlign: TextAlign.center,
-          textDirection: TextDirection.ltr,
-        );
-        anglePainter.layout();
-        final Offset labelPos =
-            saturnPos +
-            (pPos - saturnPos) * 0.6 -
-            Offset(anglePainter.width / 2, anglePainter.height / 2);
-        anglePainter.paint(canvas, labelPos);
-      }
-    }
+    // Draw centric overlays
+    drawCentricOverlay(planetName: 'Mars', show: showMarsCentric, color: Colors.redAccent);
+    drawCentricOverlay(planetName: 'Jupiter', show: showJupiterCentric, color: Colors.brown);
+    drawCentricOverlay(planetName: 'Saturn', show: showSaturnCentric, color: Colors.amber);
 
     // Draw orbits (circles for each planet's mean distance)
     final Paint orbitPaint = Paint()
