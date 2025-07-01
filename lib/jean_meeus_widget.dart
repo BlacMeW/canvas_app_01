@@ -231,110 +231,67 @@ class _JeanMeeusWidgetState extends State<JeanMeeusWidget> {
     final stepOptions = ['Hour', 'Day', 'Month'];
     final earthPos = getEarthHeliocentricPosition();
     final planetPositions = getHeliocentricPositions();
+    final planetNames = [
+      'Mercury',
+      'Venus',
+      'Earth',
+      'Mars',
+      'Jupiter',
+      'Saturn',
+      'Uranus',
+      'Neptune',
+    ];
     return Card(
       margin: const EdgeInsets.all(16),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
+        child: Scrollbar(
+          thumbVisibility: true,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'Calculation',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                const SizedBox(width: 16),
-                ElevatedButton(
-                  onPressed: _setNow,
-                  style: ElevatedButton.styleFrom(minimumSize: Size(60, 36)),
-                  child: const Text('Now'),
-                ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: () async {
-                    // Show a dialog to set date and time
-                    DateTime? pickedDate = await showDatePicker(
-                      context: context,
-                      initialDate: selectedDate,
-                      firstDate: DateTime(1900),
-                      lastDate: DateTime(2099),
-                    );
-                    if (pickedDate != null) {
-                      TimeOfDay? pickedTime = await showTimePicker(
-                        context: context,
-                        initialTime: TimeOfDay.fromDateTime(selectedDate),
-                      );
-                      if (pickedTime != null) {
-                        final dt = DateTime(
-                          pickedDate.year,
-                          pickedDate.month,
-                          pickedDate.day,
-                          pickedTime.hour,
-                          pickedTime.minute,
-                        );
-                        _setDateTime(dt);
-                      } else {
-                        // If time not picked, just set date (time = 0:00)
-                        _setDateTime(DateTime(pickedDate.year, pickedDate.month, pickedDate.day));
-                      }
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(minimumSize: Size(90, 36)),
-                  child: const Text('Set Time'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Selected Date: '
-              '${selectedDate.toIso8601String().substring(0, 10)}'
-              ' ${selectedDate.hour.toString().padLeft(2, '0')}:${selectedDate.minute.toString().padLeft(2, '0')}',
-            ),
-            Text('Julian Day: ${julianDay.toStringAsFixed(5)}'),
-            Text("Sun's Mean Longitude: ${sunMeanLongitude.toStringAsFixed(5)}°"),
-            if (earthPos != null)
-              Text(
-                'Earth heliocentric (mean, AU): x = '
-                '${earthPos.dx.toStringAsFixed(4)}, y = ${earthPos.dy.toStringAsFixed(4)}',
-              ),
-            const SizedBox(height: 8),
-            const Text(
-              'Planet Heliocentric Positions (mean, AU):',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            ...planetPositions.entries.map(
-              (e) => Text(
-                '${e.key}: x = ${e.value.dx.toStringAsFixed(4)}, y = ${e.value.dy.toStringAsFixed(4)}',
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Planet Mean Longitudes (deg):',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            ...planetLongitudes.entries.map(
-              (e) => Text('${e.key}: ${e.value.toStringAsFixed(2)}°'),
-            ),
-            const SizedBox(height: 8),
-            const Text('Meeus formulas: Julian Day, Sun Mean Longitude'),
-            const SizedBox(height: 16),
-            // Time machine controls at the bottom (split into two rows)
-            Column(
-              children: [
+                // Top bar: Only time machine controls
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     IconButton(
-                      tooltip: 'Back 1 year',
-                      icon: const Icon(Icons.fast_rewind),
-                      onPressed: () => _stepYear(-1),
+                      tooltip: 'Now',
+                      icon: const Icon(Icons.access_time),
+                      onPressed: _setNow,
                     ),
                     IconButton(
-                      tooltip: 'Back 1 month',
-                      icon: const Icon(Icons.skip_previous),
-                      onPressed: () => _stepMonth(-1),
+                      tooltip: 'Pick Date/Time',
+                      icon: const Icon(Icons.event),
+                      onPressed: () async {
+                        DateTime? pickedDate = await showDatePicker(
+                          context: context,
+                          initialDate: selectedDate,
+                          firstDate: DateTime(1900),
+                          lastDate: DateTime(2099),
+                        );
+                        if (pickedDate != null) {
+                          TimeOfDay? pickedTime = await showTimePicker(
+                            context: context,
+                            initialTime: TimeOfDay.fromDateTime(selectedDate),
+                          );
+                          if (pickedTime != null) {
+                            final dt = DateTime(
+                              pickedDate.year,
+                              pickedDate.month,
+                              pickedDate.day,
+                              pickedTime.hour,
+                              pickedTime.minute,
+                            );
+                            _setDateTime(dt);
+                          } else {
+                            _setDateTime(
+                              DateTime(pickedDate.year, pickedDate.month, pickedDate.day),
+                            );
+                          }
+                        }
+                      },
                     ),
                     IconButton(
                       tooltip: 'Back 1 day',
@@ -346,22 +303,7 @@ class _JeanMeeusWidgetState extends State<JeanMeeusWidget> {
                       icon: const Icon(Icons.arrow_right),
                       onPressed: () => _stepDate(const Duration(days: 1)),
                     ),
-                    IconButton(
-                      tooltip: 'Forward 1 month',
-                      icon: const Icon(Icons.skip_next),
-                      onPressed: () => _stepMonth(1),
-                    ),
-                    IconButton(
-                      tooltip: 'Forward 1 year',
-                      icon: const Icon(Icons.fast_forward),
-                      onPressed: () => _stepYear(1),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
+                    const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
@@ -376,57 +318,22 @@ class _JeanMeeusWidgetState extends State<JeanMeeusWidget> {
                         child: DropdownButton<String>(
                           value: _timerStep,
                           items: stepOptions
-                              .map(
-                                (s) => DropdownMenuItem(
-                                  value: s,
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        s == 'Hour'
-                                            ? Icons.schedule
-                                            : s == 'Day'
-                                            ? Icons.calendar_today
-                                            : Icons.calendar_view_month,
-                                        size: 18,
-                                        color: Theme.of(context).colorScheme.secondary,
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        s,
-                                        style: TextStyle(
-                                          fontWeight: _timerStep == s
-                                              ? FontWeight.bold
-                                              : FontWeight.normal,
-                                          color: _timerStep == s
-                                              ? Theme.of(context).colorScheme.secondary
-                                              : Theme.of(context).textTheme.bodyLarge?.color,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              )
+                              .map((s) => DropdownMenuItem(value: s, child: Text(s)))
                               .toList(),
                           onChanged: (val) {
                             if (val != null) setState(() => _timerStep = val);
                           },
-                          style: TextStyle(fontSize: 15),
+                          style: TextStyle(fontSize: 14),
                           dropdownColor: Theme.of(context).cardColor,
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
                     ),
                     IconButton(
-                      tooltip: 'Start Timer',
-                      icon: const Icon(Icons.play_arrow),
-                      color: !_timerRunning ? Colors.green : Colors.grey,
-                      onPressed: !_timerRunning ? _startTimer : null,
-                    ),
-                    IconButton(
-                      tooltip: 'Pause Timer',
-                      icon: const Icon(Icons.pause),
-                      color: _timerRunning ? Colors.amber : Colors.grey,
-                      onPressed: _timerRunning ? _pauseTimer : null,
+                      tooltip: _timerRunning ? 'Pause Timer' : 'Start Timer',
+                      icon: Icon(_timerRunning ? Icons.pause : Icons.play_arrow),
+                      color: _timerRunning ? Colors.amber : Colors.green,
+                      onPressed: _timerRunning ? _pauseTimer : _startTimer,
                     ),
                     IconButton(
                       tooltip: 'Stop Timer',
@@ -446,9 +353,185 @@ class _JeanMeeusWidgetState extends State<JeanMeeusWidget> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 12),
+                Text(
+                  'Selected Date: '
+                  '${selectedDate.toIso8601String().substring(0, 10)}'
+                  ' ${selectedDate.hour.toString().padLeft(2, '0')}:${selectedDate.minute.toString().padLeft(2, '0')}',
+                ),
+                Text('Julian Day: ${julianDay.toStringAsFixed(5)}'),
+                Text("Sun's Mean Longitude: ${sunMeanLongitude.toStringAsFixed(5)}°"),
+                if (earthPos != null)
+                  Text(
+                    'Earth heliocentric (mean, AU): x = '
+                    '${earthPos.dx.toStringAsFixed(4)}, y = ${earthPos.dy.toStringAsFixed(4)}',
+                  ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Planet Data (Mean, AU & Longitude):',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                // Table for planet data
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: DataTable(
+                    headingRowColor: WidgetStateProperty.resolveWith<Color?>(
+                      (states) => Theme.of(context).colorScheme.secondary.withOpacity(0.08),
+                    ),
+                    columns: const [
+                      DataColumn(label: Text('Planet')),
+                      DataColumn(label: Text('x (AU)')),
+                      DataColumn(label: Text('y (AU)')),
+                      DataColumn(label: Text('Mean Longitude (°)')),
+                    ],
+                    rows: planetNames.map((planet) {
+                      final pos = planetPositions[planet];
+                      final lon = planetLongitudes[planet];
+                      return DataRow(
+                        cells: [
+                          DataCell(Text(planet)),
+                          DataCell(Text(pos != null ? pos.dx.toStringAsFixed(4) : '-')),
+                          DataCell(Text(pos != null ? pos.dy.toStringAsFixed(4) : '-')),
+                          DataCell(Text(lon != null ? lon.toStringAsFixed(2) : '-')),
+                        ],
+                      );
+                    }).toList(),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text('Meeus formulas: Julian Day, Sun Mean Longitude'),
+                const SizedBox(height: 16),
+                // Time machine controls at the bottom (split into two rows)
+                Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        IconButton(
+                          tooltip: 'Back 1 year',
+                          icon: const Icon(Icons.fast_rewind),
+                          onPressed: () => _stepYear(-1),
+                        ),
+                        IconButton(
+                          tooltip: 'Back 1 month',
+                          icon: const Icon(Icons.skip_previous),
+                          onPressed: () => _stepMonth(-1),
+                        ),
+                        IconButton(
+                          tooltip: 'Back 1 day',
+                          icon: const Icon(Icons.arrow_left),
+                          onPressed: () => _stepDate(const Duration(days: -1)),
+                        ),
+                        IconButton(
+                          tooltip: 'Forward 1 day',
+                          icon: const Icon(Icons.arrow_right),
+                          onPressed: () => _stepDate(const Duration(days: 1)),
+                        ),
+                        IconButton(
+                          tooltip: 'Forward 1 month',
+                          icon: const Icon(Icons.skip_next),
+                          onPressed: () => _stepMonth(1),
+                        ),
+                        IconButton(
+                          tooltip: 'Forward 1 year',
+                          icon: const Icon(Icons.fast_forward),
+                          onPressed: () => _stepYear(1),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.secondary.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: Theme.of(context).colorScheme.secondary,
+                              width: 1.2,
+                            ),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              value: _timerStep,
+                              items: stepOptions
+                                  .map(
+                                    (s) => DropdownMenuItem(
+                                      value: s,
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            s == 'Hour'
+                                                ? Icons.schedule
+                                                : s == 'Day'
+                                                ? Icons.calendar_today
+                                                : Icons.calendar_view_month,
+                                            size: 18,
+                                            color: Theme.of(context).colorScheme.secondary,
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            s,
+                                            style: TextStyle(
+                                              fontWeight: _timerStep == s
+                                                  ? FontWeight.bold
+                                                  : FontWeight.normal,
+                                              color: _timerStep == s
+                                                  ? Theme.of(context).colorScheme.secondary
+                                                  : Theme.of(context).textTheme.bodyLarge?.color,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (val) {
+                                if (val != null) setState(() => _timerStep = val);
+                              },
+                              style: TextStyle(fontSize: 15),
+                              dropdownColor: Theme.of(context).cardColor,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: 'Start Timer',
+                          icon: const Icon(Icons.play_arrow),
+                          color: !_timerRunning ? Colors.green : Colors.grey,
+                          onPressed: !_timerRunning ? _startTimer : null,
+                        ),
+                        IconButton(
+                          tooltip: 'Pause Timer',
+                          icon: const Icon(Icons.pause),
+                          color: _timerRunning ? Colors.amber : Colors.grey,
+                          onPressed: _timerRunning ? _pauseTimer : null,
+                        ),
+                        IconButton(
+                          tooltip: 'Stop Timer',
+                          icon: const Icon(Icons.stop),
+                          color: _timerRunning ? Colors.red : Colors.grey,
+                          onPressed: _timerRunning ? _stopTimer : null,
+                        ),
+                        IconButton(
+                          tooltip: 'Reverse Timer Direction',
+                          icon: Icon(Icons.swap_horiz),
+                          color: _timerDirection == 1 ? Colors.green : Colors.red,
+                          onPressed: () {
+                            setState(() {
+                              _timerDirection *= -1;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );
